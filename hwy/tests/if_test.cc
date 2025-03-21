@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stddef.h>
-
 #undef HWY_TARGET_INCLUDE
 #define HWY_TARGET_INCLUDE "tests/if_test.cc"
 #include "hwy/foreach_target.h"  // IWYU pragma: keep
@@ -24,6 +22,7 @@
 HWY_BEFORE_NAMESPACE();
 namespace hwy {
 namespace HWY_NAMESPACE {
+namespace {
 
 struct TestIfThenElse {
   template <class T, class D>
@@ -318,7 +317,7 @@ struct TestIfNegativeThenNegOrUndefIfZero {
 
   template <typename T, class D>
   HWY_NOINLINE void operator()(T /*unused*/, D d) {
-    const auto v1 = PositiveIota(d);
+    const auto v1 = PositiveIota(d, 1);
     const auto v2 = Neg(v1);
 
     HWY_ASSERT_VEC_EQ(d, v1, IfNegativeThenNegOrUndefIfZero(v1, v1));
@@ -348,14 +347,15 @@ HWY_NOINLINE void TestAllIfNegativeThenNegOrUndefIfZero() {
   ForFloatTypes(ForPartialVectors<TestIfNegativeThenNegOrUndefIfZero>());
 }
 
+}  // namespace
 // NOLINTNEXTLINE(google-readability-namespace-comments)
 }  // namespace HWY_NAMESPACE
 }  // namespace hwy
 HWY_AFTER_NAMESPACE();
 
 #if HWY_ONCE
-
 namespace hwy {
+namespace {
 HWY_BEFORE_TEST(HwyIfTest);
 HWY_EXPORT_AND_TEST_P(HwyIfTest, TestAllIfThenElse);
 HWY_EXPORT_AND_TEST_P(HwyIfTest, TestAllIfVecThenElse);
@@ -364,6 +364,7 @@ HWY_EXPORT_AND_TEST_P(HwyIfTest, TestAllZeroIfNegative);
 HWY_EXPORT_AND_TEST_P(HwyIfTest, TestAllIfNegative);
 HWY_EXPORT_AND_TEST_P(HwyIfTest, TestAllIfNegativeThenNegOrUndefIfZero);
 HWY_AFTER_TEST();
+}  // namespace
 }  // namespace hwy
-
-#endif
+HWY_TEST_MAIN();
+#endif  // HWY_ONCE

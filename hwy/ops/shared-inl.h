@@ -153,6 +153,16 @@ constexpr size_t ScaleByPower(size_t N, int pow2) {
 }
 
 template <typename T>
+HWY_INLINE void MaybePoison(T* HWY_RESTRICT unaligned, size_t count) {
+#if HWY_IS_MSAN
+  __msan_poison(unaligned, count * sizeof(T));
+#else
+  (void)unaligned;
+  (void)count;
+#endif
+}
+
+template <typename T>
 HWY_INLINE void MaybeUnpoison(T* HWY_RESTRICT unaligned, size_t count) {
   // Workaround for MSAN not marking compressstore as initialized (b/233326619)
 #if HWY_IS_MSAN
@@ -621,8 +631,11 @@ HWY_API bool IsAligned(D d, T* ptr) {
 #define HWY_IF_SIGNED_V(V) HWY_IF_SIGNED(hwy::HWY_NAMESPACE::TFromV<V>)
 #define HWY_IF_FLOAT_V(V) HWY_IF_FLOAT(hwy::HWY_NAMESPACE::TFromV<V>)
 #define HWY_IF_NOT_FLOAT_V(V) HWY_IF_NOT_FLOAT(hwy::HWY_NAMESPACE::TFromV<V>)
+#define HWY_IF_FLOAT3264_V(V) HWY_IF_FLOAT3264(hwy::HWY_NAMESPACE::TFromV<V>)
 #define HWY_IF_SPECIAL_FLOAT_V(V) \
   HWY_IF_SPECIAL_FLOAT(hwy::HWY_NAMESPACE::TFromV<V>)
+#define HWY_IF_FLOAT_OR_SPECIAL_V(V) \
+  HWY_IF_FLOAT_OR_SPECIAL(hwy::HWY_NAMESPACE::TFromV<V>)
 #define HWY_IF_NOT_FLOAT_NOR_SPECIAL_V(V) \
   HWY_IF_NOT_FLOAT_NOR_SPECIAL(hwy::HWY_NAMESPACE::TFromV<V>)
 
@@ -633,7 +646,7 @@ HWY_API bool IsAligned(D d, T* ptr) {
 #define HWY_IF_T_SIZE_ONE_OF_V(V, bit_array) \
   HWY_IF_T_SIZE_ONE_OF(hwy::HWY_NAMESPACE::TFromV<V>, bit_array)
 
-#define HWY_MAX_LANES_V(V) HWY_MAX_LANES_D(DFromV<V>)
+#define HWY_MAX_LANES_V(V) HWY_MAX_LANES_D(hwy::HWY_NAMESPACE::DFromV<V>)
 #define HWY_IF_V_SIZE_V(V, bytes) \
   HWY_IF_V_SIZE(hwy::HWY_NAMESPACE::TFromV<V>, HWY_MAX_LANES_V(V), bytes)
 #define HWY_IF_V_SIZE_LE_V(V, bytes) \
@@ -656,10 +669,17 @@ HWY_API bool IsAligned(D d, T* ptr) {
 #define HWY_IF_MINMAX_OF_LANES_D(D) HWY_IF_LANES_GT_D(D, 1)
 
 #undef HWY_IF_ADDSUB_V
-#define HWY_IF_ADDSUB_V(V) HWY_IF_LANES_GT_D(DFromV<V>, 1)
+#define HWY_IF_ADDSUB_V(V) HWY_IF_LANES_GT_D(hwy::HWY_NAMESPACE::DFromV<V>, 1)
 
 #undef HWY_IF_MULADDSUB_V
-#define HWY_IF_MULADDSUB_V(V) HWY_IF_LANES_GT_D(DFromV<V>, 1)
+#define HWY_IF_MULADDSUB_V(V) \
+  HWY_IF_LANES_GT_D(hwy::HWY_NAMESPACE::DFromV<V>, 1)
+
+#undef HWY_IF_PAIRWISE_ADD_128_D
+#define HWY_IF_PAIRWISE_ADD_128_D(D) HWY_IF_V_SIZE_GT_D(D, 8)
+
+#undef HWY_IF_PAIRWISE_SUB_128_D
+#define HWY_IF_PAIRWISE_SUB_128_D(D) HWY_IF_V_SIZE_GT_D(D, 8)
 
 // HWY_IF_U2I_DEMOTE_FROM_LANE_SIZE_V is used to disable the default
 // implementation of unsigned to signed DemoteTo/ReorderDemote2To in

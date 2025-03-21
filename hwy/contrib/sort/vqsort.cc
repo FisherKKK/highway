@@ -23,7 +23,8 @@
 // unavailable on Android and non-Linux RVV, we assume that those systems lack
 // getrandom. Note that the only supported sources of entropy are getrandom or
 // Windows, thus VQSORT_SECURE_SEED=0 when this is 0 and we are not on Windows.
-#if defined(ANDROID) || defined(__ANDROID__) || (HWY_ARCH_RISCV && !HWY_OS_LINUX)
+#if defined(ANDROID) || defined(__ANDROID__) || \
+    (HWY_ARCH_RISCV && !HWY_OS_LINUX)
 #define VQSORT_GETRANDOM 0
 #endif
 
@@ -71,6 +72,12 @@
 #if VQSORT_SECURE_SEED == 1
 #include <sys/random.h>
 #elif VQSORT_SECURE_SEED == 2
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif  // NOMINMAX
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif  // WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #if HWY_COMPILER_MSVC || HWY_COMPILER_CLANGCL
 #pragma comment(lib, "advapi32.lib")
